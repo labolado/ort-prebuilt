@@ -32,14 +32,15 @@ jobs:
           cd /c/ort-src
           git submodule update --init --recursive --depth 1
 
-      - name: Patch Eigen hash check
+      - name: Patch build issues
         shell: bash
         run: |
           cd /c/ort-src
-          # Remove ALL URL_HASH lines from eigen.cmake to bypass GitLab archive hash instability
+          # Fix 1: Remove Eigen hash check (GitLab archive hash instability)
           sed -i '/URL_HASH/d' cmake/external/eigen.cmake
-          echo "Patched eigen.cmake - removed hash checks"
-          cat cmake/external/eigen.cmake
+          # Fix 2: Add missing #include <chrono> for VS2022 17.14+ compatibility
+          sed -i '1s/^/#include <chrono>\n/' include/onnxruntime/core/platform/ort_mutex.h
+          echo "Patches applied"
 
       - name: Build x86 shared library
         shell: cmd
