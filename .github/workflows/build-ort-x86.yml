@@ -32,12 +32,14 @@ jobs:
           cd /c/ort-src
           git submodule update --init --recursive --depth 1
 
-      - name: Patch Eigen hash check
+      - name: Patch CMake compatibility
         shell: bash
         run: |
-          # Remove Eigen URL hash check that fails due to GitLab archive instability
-          sed -i 's/URL_HASH SHA1=[a-f0-9]*//' /c/ort-src/cmake/external/eigen.cmake || true
-          grep -n "URL_HASH" /c/ort-src/cmake/external/eigen.cmake || echo "Hash check removed"
+          cd /c/ort-src
+          # Fix 1: Remove Eigen hash check (GitLab archive hash instability)
+          sed -i 's/URL_HASH SHA1=[a-f0-9]*//' cmake/external/eigen.cmake || true
+          # Fix 2: Set CMP0169 OLD to allow FetchContent_Populate (CMake 3.31+ compat)
+          sed -i '1s/^/cmake_policy(SET CMP0169 OLD)\n/' cmake/CMakeLists.txt || true
 
       - name: Build x86 shared library
         shell: cmd
@@ -52,7 +54,8 @@ jobs:
             --skip_tests ^
             --skip_submodule_sync ^
             --build_shared_lib ^
-            --cmake_generator "Visual Studio 17 2022"
+            --cmake_generator "Visual Studio 17 2022" ^
+            --cmake_extra_defines CMAKE_POLICY_DEFAULT_CMP0169=OLD
 
       - name: Package
         shell: pwsh
