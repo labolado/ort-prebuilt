@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           # Clone Eigen directly from GitHub mirror (more reliable than GitLab archives)
-          EIGEN_TAG=$(grep -oP "eigen/eigen/-/archive/\K[a-f0-9]+" /c/ort-src/cmake/external/eigen.cmake | head -1)
+          EIGEN_TAG=$(grep -o "eigen/-/archive/[a-f0-9]*" /c/ort-src/cmake/external/eigen.cmake | head -1 | sed 's|eigen/-/archive/||')
           echo "Eigen commit: $EIGEN_TAG"
           git clone --depth 1 https://gitlab.com/libeigen/eigen.git /c/eigen-src
           if [ -n "$EIGEN_TAG" ]; then
