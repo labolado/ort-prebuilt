@@ -68,10 +68,7 @@ jobs:
           pkg="onnxruntime-win-x86-${ver}.zip"
           gh release create "$tag" "$pkg" \
             --title "ORT ${ver} Windows x86" \
-            --notes "ONNX Runtime ${ver} built from source for Windows x86 (32-bit).
-
-Built with MSVC x86 on GitHub Actions.
-For use with Solar2D Windows Simulator (32-bit)." \
+            --notes "ONNX Runtime ${ver} built from source for Windows x86 (32-bit). For use with Solar2D Windows Simulator." \
             --latest
         env:
           GH_TOKEN: ${{ github.token }}
