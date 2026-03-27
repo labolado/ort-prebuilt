@@ -39,6 +39,17 @@ jobs:
           cd /c/ort-src
           git submodule update --init --recursive --depth 1
 
+      - name: Pre-install Eigen (workaround GitLab hash instability)
+        shell: bash
+        run: |
+          # Clone Eigen directly from GitHub mirror (more reliable than GitLab archives)
+          EIGEN_TAG=$(grep -oP "eigen/eigen/-/archive/\K[a-f0-9]+" /c/ort-src/cmake/external/eigen.cmake | head -1)
+          echo "Eigen commit: $EIGEN_TAG"
+          git clone --depth 1 https://gitlab.com/libeigen/eigen.git /c/eigen-src
+          if [ -n "$EIGEN_TAG" ]; then
+            cd /c/eigen-src && git fetch --depth 1 origin "$EIGEN_TAG" && git checkout "$EIGEN_TAG" 2>/dev/null || true
+          fi
+
       - name: Build x86 shared library
         shell: cmd
         timeout-minutes: 120
@@ -53,6 +64,8 @@ jobs:
             --skip_tests ^
             --skip_submodule_sync ^
             --build_shared_lib ^
+            --use_preinstalled_eigen ^
+            --eigen_path C:\eigen-src ^
             --cmake_generator "Visual Studio 17 2022"
 
       - name: Package
