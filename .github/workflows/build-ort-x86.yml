@@ -25,13 +25,6 @@ jobs:
         with:
           arch: x86
 
-      - name: Install CMake 3.28
-        shell: pwsh
-        run: |
-          choco install cmake --version=3.28.6 --force -y
-          $env:PATH = "C:\Program Files\CMake\bin;$env:PATH"
-          cmake --version
-
       - name: Clone ONNX Runtime v${{ github.event.inputs.ort_version }}
         shell: bash
         run: |
@@ -39,22 +32,19 @@ jobs:
           cd /c/ort-src
           git submodule update --init --recursive --depth 1
 
-      - name: Pre-install Eigen (workaround GitLab hash instability)
+      - name: Patch Eigen hash check
         shell: bash
         run: |
-          # Clone Eigen directly from GitHub mirror (more reliable than GitLab archives)
-          EIGEN_TAG=$(grep -o "eigen/-/archive/[a-f0-9]*" /c/ort-src/cmake/external/eigen.cmake | head -1 | sed 's|eigen/-/archive/||')
-          echo "Eigen commit: $EIGEN_TAG"
-          git clone --depth 1 https://gitlab.com/libeigen/eigen.git /c/eigen-src
-          if [ -n "$EIGEN_TAG" ]; then
-            cd /c/eigen-src && git fetch --depth 1 origin "$EIGEN_TAG" && git checkout "$EIGEN_TAG" 2>/dev/null || true
-          fi
+          cd /c/ort-src
+          # Remove ALL URL_HASH lines from eigen.cmake to bypass GitLab archive hash instability
+          sed -i '/URL_HASH/d' cmake/external/eigen.cmake
+          echo "Patched eigen.cmake - removed hash checks"
+          cat cmake/external/eigen.cmake
 
       - name: Build x86 shared library
         shell: cmd
         timeout-minutes: 120
         run: |
-          set PATH=C:\Program Files\CMake\bin;%PATH%
           cd /d C:\ort-src
           python tools\ci_build\build.py ^
             --build_dir build\x86 ^
@@ -64,8 +54,6 @@ jobs:
             --skip_tests ^
             --skip_submodule_sync ^
             --build_shared_lib ^
-            --use_preinstalled_eigen ^
-            --eigen_path C:\eigen-src ^
             --cmake_generator "Visual Studio 17 2022"
 
       - name: Package
